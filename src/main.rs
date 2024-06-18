@@ -1,10 +1,12 @@
 mod app;
+mod asserts;
 mod browse;
 mod menu;
 mod playback;
 mod playing;
 mod root;
 mod theme;
+mod window;
 
 mod metadata;
 

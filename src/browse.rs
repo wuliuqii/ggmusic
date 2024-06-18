@@ -26,7 +26,6 @@ impl Render for Browse {
         div()
             .id("browse-view")
             .flex_grow()
-            .bg(rgb(theme::colours::AMSTERDAM))
             .overflow_scroll()
             .rounded_b_sm()
             .p(px(1.))

@@ -12,7 +12,7 @@ use lofty::{
     tag::{Accessor, ItemKey},
 };
 
-use crate::theme;
+use crate::theme::{self, Theme};
 
 use super::library::LibraryModel;
 
@@ -112,6 +112,8 @@ impl Track {
 
 impl Track {
     fn render(&self, cx: &mut gpui::WindowContext, index: usize) -> impl gpui::IntoElement {
+        let theme = cx.global::<Theme>();
+
         div()
             .id(ElementId::Name(self.title.clone().into()))
             .flex()
@@ -119,13 +121,17 @@ impl Track {
             .h_8()
             .items_center()
             .rounded(px(1.))
-            .hover(|style| style.bg(rgb(theme::colours::TOUCH)))
+            .hover(|style| {
+                let mut bg_hover = theme.mantle;
+                bg_hover.fade_out(0.5);
+                style.bg(bg_hover)
+            })
             .child(
                 div()
                     .flex()
                     .w_8()
                     .justify_end()
-                    .text_color(rgb(theme::colours::YOUTH))
+                    .text_color(theme.subtext0)
                     .child((index + 1).to_string()),
             )
             .child(div().child(self.title.clone()))
