@@ -67,7 +67,7 @@ impl Window {
             cx.hide();
         });
         // After 90 seconds, reset the state
-        cx.spawn(|mut cx| async move {
+        cx.spawn(|cx| async move {
             cx.background_executor()
                 .timer(Duration::from_secs(90))
                 .await;

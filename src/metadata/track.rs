@@ -2,30 +2,28 @@ use std::{borrow::Cow, ffi::OsStr, path::Path, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use gpui::{
-    div, px, rgb, Element, ElementId, InteractiveElement, ParentElement, Render, Styled, View,
-    VisualContext, WindowContext,
+    div, img, px, ElementId, FontWeight, ImageData, InteractiveElement, ParentElement, Render,
+    Styled, View, VisualContext, WindowContext,
 };
 use lofty::{
     file::{AudioFile, FileType, TaggedFileExt},
-    picture::{Picture, PictureType},
+    picture::{self, Picture, PictureType},
     probe::Probe,
     tag::{Accessor, ItemKey},
 };
 
-use crate::theme::{self, Theme};
+use crate::theme::Theme;
 
 use super::library::LibraryModel;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Track {
     artist: String,
     title: String,
     album: String,
-    ext: Option<String>,
     file: Option<String>,
     duration: Duration,
-    picture: Option<Picture>,
-    cover: Option<String>,
+    cover: Option<Arc<ImageData>>,
     file_type: Option<FileType>,
 }
 
@@ -72,12 +70,17 @@ impl Track {
                 let mut picture = tag
                     .pictures()
                     .iter()
-                    .find(|pic| pic.pic_type() == PictureType::CoverFront)
-                    .cloned();
+                    .find(|pic| pic.pic_type() == PictureType::CoverFront);
                 if picture.is_none() {
-                    picture = tag.pictures().first().cloned();
+                    picture = tag.pictures().first();
                 }
-                song.picture = picture;
+                // TODO: default album cover
+                let bytes = picture.map(|pic| pic.data());
+                if let Some(bytes) = bytes {
+                    let format = image::guess_format(bytes)?;
+                    let data = image::load_from_memory_with_format(bytes, format)?.into_bgra8();
+                    song.cover = Some(Arc::new(ImageData::new(data)));
+                }
             }
         }
 
@@ -93,32 +96,28 @@ impl Track {
             .and_then(OsStr::to_str)
             .map(String::from)
             .unwrap_or("UNKNOWN".to_string());
-        let ext = p.extension().and_then(OsStr::to_str).map(String::from);
         let file = Some(p.to_string_lossy().to_string());
         let duration = Duration::from_secs(0);
         Self {
             artist: String::new(),
             title,
             album: String::new(),
-            ext,
             file,
             duration,
             cover: None,
             file_type: None,
-            picture: None,
         }
     }
 }
 
 impl Track {
-    fn render(&self, cx: &mut gpui::WindowContext, index: usize) -> impl gpui::IntoElement {
+    fn render(&self, cx: &mut gpui::WindowContext) -> impl gpui::IntoElement {
         let theme = cx.global::<Theme>();
 
-        div()
+        let e = div()
             .id(ElementId::Name(self.title.clone().into()))
             .flex()
             .gap_3()
-            .h_8()
             .items_center()
             .rounded(px(1.))
             .hover(|style| {
@@ -126,16 +125,27 @@ impl Track {
                 bg_hover.fade_out(0.5);
                 style.bg(bg_hover)
             })
-            .child(
-                div()
-                    .flex()
-                    .w_8()
-                    .justify_end()
-                    .text_color(theme.subtext0)
-                    .child((index + 1).to_string()),
-            )
-            .child(div().child(self.title.clone()))
-            .child(div().child(self.artist.clone()))
+            .text_color(theme.text);
+
+        let e = if let Some(cover) = self.cover.clone() {
+            e.child(img(cover).flex_none().w_16().h_16())
+        } else {
+            e
+        };
+
+        e.child(
+            div()
+                .flex_col()
+                .child(div().child(self.title.clone()))
+                .child(
+                    div()
+                        .flex()
+                        .text_sm()
+                        .child(self.artist.clone())
+                        .child(" - ")
+                        .child(self.album.clone()),
+                ),
+        )
     }
 }
 
@@ -151,11 +161,10 @@ impl Tracks {
 
 impl Render for Tracks {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl gpui::IntoElement {
-        div().flex().flex_col().gap(px(1.)).children(
-            self.tracks
-                .iter()
-                .enumerate()
-                .map(|(index, track)| track.render(cx, index)),
-        )
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(1.))
+            .children(self.tracks.iter().map(|track| track.render(cx)))
     }
 }

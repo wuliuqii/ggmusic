@@ -1,15 +1,13 @@
 use gpui::{
-    div, font, px, rgb, FontWeight, ParentElement, Render, Styled, View, ViewContext,
+    div, px, FontWeight, ParentElement, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
 
 use crate::{
     browse::Browse,
-    menu::Menu,
     metadata::library::LibraryModel,
     playback::PlaybackModel,
-    playing::Playing,
-    theme::{self, Theme},
+    theme::{Theme},
 };
 
 pub struct Root {

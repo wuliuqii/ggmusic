@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-use anyhow::anyhow;
 use gpui::AssetSource;
 use gpui::Result;
 use gpui::SharedString;

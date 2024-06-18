@@ -1,11 +1,10 @@
 use gpui::{
-    div, px, rgb, InteractiveElement, ParentElement, Render, StatefulInteractiveElement, Styled,
+    div, px, InteractiveElement, ParentElement, Render, StatefulInteractiveElement, Styled,
     View, VisualContext, WindowContext,
 };
 
 use crate::{
     metadata::{library::LibraryModel, track::Tracks},
-    theme,
 };
 
 pub struct Browse {
