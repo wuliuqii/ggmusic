@@ -1866,6 +1866,7 @@ dependencies = [
  "image",
  "lofty",
  "log",
+ "rayon",
  "rodio",
  "rust-embed",
 ]

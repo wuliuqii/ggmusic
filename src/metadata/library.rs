@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::{path::PathBuf, sync::Arc};
 
 use gpui::{Context, Global, Model, WindowContext};
@@ -7,22 +8,36 @@ use super::track::{Track, Tracks};
 const LIBRARY_PATH: &str = "/home/gallon/Music";
 
 #[derive(Debug, Clone)]
-pub struct Library(Vec<Arc<Track>>);
+pub struct Library(Vec<Track>);
 
 impl Library {
     pub fn load_tracks() -> Self {
         let dir = PathBuf::from(LIBRARY_PATH.to_string());
-        let mut tracks = vec![];
+        let mut entries = vec![];
         for entry in dir.read_dir().unwrap() {
             let entry = entry.unwrap();
             let path = entry.path();
-            if path.is_file() {
-                let track = Track::read(&path).unwrap();
-                if track.is_song() {
-                    tracks.push(Arc::new(track));
-                }
-            }
+            entries.push(path);
         }
+
+        // TODO: more elegant way to do this?
+        let tracks = entries
+            .par_iter()
+            .map(|entry| {
+                if entry.is_file() {
+                    let track = Track::read(entry).unwrap();
+                    if track.is_song() {
+                        Some(track)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .filter(|track| track.is_some())
+            .map(|track| track.unwrap())
+            .collect::<Vec<Track>>();
 
         Library(tracks)
     }
