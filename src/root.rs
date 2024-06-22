@@ -1,35 +1,49 @@
+use std::sync::Arc;
+
 use gpui::{
-    div, px, FontWeight, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, px, FontWeight, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 
 use crate::{
-    browse::Browse,
-    metadata::library::LibraryModel,
-    playback::PlaybackModel,
-    theme::{Theme},
+    browse::Browse, events::UiEvent, metadata::library::LibraryModel, playback::Playback,
+    playing::Playing, theme::Theme,
 };
 
 pub struct Root {
-    playback: PlaybackModel,
-    library: LibraryModel,
     browse: View<Browse>,
-    // playing: View<Playing>,
+    playback: Model<Playback>,
+    playing: View<Playing>,
     // memu: View<Menu>,
 }
 
 impl Root {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
-        let playback = PlaybackModel::init(cx);
+    pub fn new(cx: &mut WindowContext) -> Self {
         let library = LibraryModel::init(cx);
 
-        let browse = Browse::init(cx, library.clone());
+        let playback = Playback::init(cx);
 
-        cx.new_view(|cx| Self {
-            playback,
-            library,
+        let browse = Browse::init(cx, library.clone());
+        let playing = Playing::init(cx, library.clone());
+
+        Self {
             browse,
-        })
+            playback,
+            playing,
+        }
+    }
+
+    fn handle_ui_event(&mut self, event: &Arc<UiEvent>, cx: &mut WindowContext) {
+        match (**event).clone() {
+            UiEvent::PlayClicked(event) => self.playback.update(cx, |this, cx| {
+                this.play(Arc::clone(&event.track), cx);
+                cx.notify();
+            }),
+            UiEvent::PauseClicked => self.playback.update(cx, |this, cx| {
+                this.pause(cx);
+                cx.notify();
+            }),
+        };
     }
 }
 
@@ -59,8 +73,8 @@ impl Render for Root {
                     .p(px(2.))
                     .font_family(theme.font_mono.clone())
                     .font_weight(FontWeight::MEDIUM)
-                    // .text_color(theme.text)
-                    .child(self.browse.clone()),
+                    .child(self.browse.clone())
+                    .child(self.playing.clone()),
             )
     }
 }

@@ -1,21 +1,26 @@
+use std::sync::Arc;
+
 use gpui::{
-    div, px, InteractiveElement, ParentElement, Render, StatefulInteractiveElement, Styled,
-    View, VisualContext, WindowContext,
+    div, px, InteractiveElement, ParentElement, Render, StatefulInteractiveElement, Styled, View,
+    VisualContext, WindowContext,
 };
 
 use crate::{
     metadata::{library::LibraryModel, track::Tracks},
+    playing::Playing,
 };
 
 pub struct Browse {
-    tracks: View<Tracks>,
+    pub tracks: View<Tracks>,
     // albums: View<Albums>,
+    // playing: View<Playing>,
 }
 
 impl Browse {
     pub fn init(cx: &mut WindowContext, model: LibraryModel) -> View<Self> {
         let tracks = cx.new_view(|cx| model.get_tracks(cx));
         // let albums = model.get_albums(cx);
+
         cx.new_view(|cx| Self { tracks })
     }
 }

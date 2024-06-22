@@ -2,8 +2,9 @@ use std::{borrow::Cow, ffi::OsStr, path::Path, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use gpui::{
-    div, img, px, ElementId, FontWeight, ImageData, InteractiveElement, ParentElement, Render,
-    Styled, View, VisualContext, WindowContext,
+    div, img, px, ElementId, FontWeight, ImageData, InteractiveElement, IntoElement, ParentElement,
+    Render, RenderOnce, StatefulInteractiveElement, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 use lofty::{
     file::{AudioFile, FileType, TaggedFileExt},
@@ -12,18 +13,18 @@ use lofty::{
     tag::{Accessor, ItemKey},
 };
 
-use crate::theme::Theme;
+use crate::{events::UiEvent, theme::Theme};
 
 use super::library::LibraryModel;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, IntoElement)]
 pub struct Track {
-    artist: String,
-    title: String,
-    album: String,
-    file: Option<String>,
+    pub artist: String,
+    pub title: String,
+    pub album: String,
+    pub file: Option<String>,
     duration: Duration,
-    cover: Option<Arc<ImageData>>,
+    pub cover: Option<Arc<ImageData>>,
     file_type: Option<FileType>,
 }
 
@@ -110,8 +111,8 @@ impl Track {
     }
 }
 
-impl Track {
-    fn render(&self, cx: &mut gpui::WindowContext) -> impl gpui::IntoElement {
+impl RenderOnce for Track {
+    fn render(self, cx: &mut WindowContext) -> impl gpui::IntoElement {
         let theme = cx.global::<Theme>();
 
         let e = div()
@@ -149,8 +150,9 @@ impl Track {
     }
 }
 
+#[derive(Default)]
 pub struct Tracks {
-    pub tracks: Vec<Arc<Track>>,
+    pub tracks: Vec<Track>,
 }
 
 impl Tracks {
@@ -165,6 +167,6 @@ impl Render for Tracks {
             .flex()
             .flex_col()
             .gap(px(1.))
-            .children(self.tracks.iter().map(|track| track.render(cx)))
+            .children(self.tracks.clone())
     }
 }

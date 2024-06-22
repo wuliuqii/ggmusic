@@ -1,6 +1,7 @@
 mod app;
 mod asserts;
 mod browse;
+mod events;
 mod menu;
 mod playback;
 mod playing;
